@@ -27,7 +27,7 @@ public class InMemoryFallBackStore implements RateLimitStore{
     }
 
     @Override
-    public boolean isAvailabe() {
+    public boolean isAvailable() {
         return true;    // this store is always available as it's in-memory
     }
 }

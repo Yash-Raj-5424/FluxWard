@@ -23,11 +23,12 @@ public class RateLimiterService {
     private final RateLimiterProperties properties;
 
     public RateLimitResult check(String clientKey){
-        RateLimitStore store = redisStore.isAvailabe()
-                ? redisStore
-                : fallBackStore;
 
-        if (!redisStore.isAvailabe() && !properties.getFailOpen()) {
+        boolean redisUp = redisStore.isAvailable();
+
+        RateLimitStore store = redisUp ? redisStore : fallBackStore;
+
+        if (!redisUp && !properties.getFailOpen()) {
             return RateLimitResult.rejected(5_000L, Instant.now().plusSeconds(5));
         }
 

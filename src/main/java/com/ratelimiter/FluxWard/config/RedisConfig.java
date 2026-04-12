@@ -3,9 +3,13 @@ package com.ratelimiter.FluxWard.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Duration;
 
@@ -13,15 +17,18 @@ import java.time.Duration;
 public class RedisConfig {
 
     @Bean
-    public LettuceConnectionFactory redisConnectionFactory(
+    public JedisConnectionFactory redisConnectionFactory(
             @Value("${spring.data.redis.host}") String host,
             @Value("${spring.data.redis.port}") int port) {
 
-        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-                .commandTimeout(Duration.ofMillis(50))
-                .build();
 
         RedisStandaloneConfiguration serverConfig = new RedisStandaloneConfiguration(host, port);
-        return new LettuceConnectionFactory(serverConfig, clientConfig);
+        JedisClientConfiguration clientConfig = JedisClientConfiguration.builder()
+                .connectTimeout(Duration.ofMillis(2000))
+                .readTimeout(Duration.ofMillis(2000))
+                .build();
+
+        return new JedisConnectionFactory(serverConfig, clientConfig);
     }
+
 }

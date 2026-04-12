@@ -8,6 +8,6 @@ import java.time.Instant;
 public interface RateLimitStore  {
 
     RateLimitResult getAndIncrement(String clientKey, RateLimitRule rule, Instant now);
-    boolean isAvailabe();
+    boolean isAvailable();
 
 }

@@ -27,7 +27,7 @@ public class RedisRateLimitStore implements RateLimitStore{
         local lastRefill = tonumber(bucket[2]) or now
 
         local elapsed = now - lastRefill
-        local refillTokens = math.floor(elapsed * refillRate)
+        local refillTokens = math.floor(elapsed * refillRate / 1000)
         tokens = math.min(tokens + refillTokens, capacity)
         lastRefill = now
 
@@ -46,14 +46,21 @@ public class RedisRateLimitStore implements RateLimitStore{
     }
 
 
+    private static final DefaultRedisScript<List> SCRIPT = new DefaultRedisScript<>(TOKEN_BUCKET_SCRIPT,
+                                                                                    List.class);
+
     public RateLimitResult getAndIncrement(String clientKey, RateLimitRule rule, Instant now) {
+
         List<Object> result = redis.execute(
-                new DefaultRedisScript<>(TOKEN_BUCKET_SCRIPT, List.class),
+                SCRIPT,
                 List.of("rl:" + clientKey),
                 String.valueOf(rule.getCapacity()),
                 String.valueOf(rule.getRefillRatePerSecond()),
                 String.valueOf(now.toEpochMilli())
         );
+        if(result == null || result.isEmpty()) {
+            return RateLimitResult.allowed(rule.getCapacity(), rule.getCapacity(), now.plusSeconds(60));
+        }
 
         boolean allowed = ((Long) result.get(0)) == 1L;
         long remaining  = (Long) result.get(1);
@@ -65,7 +72,14 @@ public class RedisRateLimitStore implements RateLimitStore{
     }
 
     @Override
-    public boolean isAvailabe() {
-        return false;
+    public boolean isAvailable() {
+        try {
+            redis.opsForValue().get("health-check");
+            System.out.println("Redis is AVAILABLE");
+            return true;
+        } catch (Exception e) {
+            System.out.println("Redis is UNAVAILABLE: " + e.getMessage());
+            return false;
+        }
     }
 }
