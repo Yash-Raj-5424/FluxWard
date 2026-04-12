@@ -11,6 +11,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
 
+import java.time.Clock;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Configuration
@@ -39,6 +40,11 @@ public class RateLimiterConfig {
                 properties.getWindowMs(),
                 KeyType.valueOf(properties.getKeyType())
         );
+    }
+
+    @Bean
+    public Clock clock() {
+        return Clock.systemUTC();
     }
 
 }

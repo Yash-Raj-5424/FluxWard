@@ -4,11 +4,13 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ratelimiter.FluxWard.model.RateLimitResult;
 import com.ratelimiter.FluxWard.model.RateLimitRule;
+import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+@Component
 public class InMemoryFallBackStore implements RateLimitStore{
 
     private final Cache<String, AtomicLong> cache = Caffeine.newBuilder()

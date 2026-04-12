@@ -2,6 +2,7 @@ package com.ratelimiter.FluxWard.store;
 
 import com.ratelimiter.FluxWard.model.RateLimitResult;
 import com.ratelimiter.FluxWard.model.RateLimitRule;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
@@ -10,6 +11,7 @@ import java.time.Instant;
 import java.util.List;
 
 @Component
+@Primary
 public class RedisRateLimitStore implements RateLimitStore{
 
     private final StringRedisTemplate redis;
