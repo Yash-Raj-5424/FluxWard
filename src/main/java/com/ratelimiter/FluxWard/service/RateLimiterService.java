@@ -31,6 +31,6 @@ public class RateLimiterService {
             return RateLimitResult.rejected(5_000L, Instant.now().plusSeconds(5));
         }
 
-        return rateLimiter.tryAcquire(clientKey, defaultRule);
+        return store.getAndIncrement(clientKey, defaultRule, Instant.now());
     }
 }

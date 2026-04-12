@@ -7,8 +7,8 @@ spring:
       port: 6379
 
   rate-limiter:
-    capacity: 100
-    refill-rate-per-second: 10
+    capacity: 3
+    refill-rate-per-second: 1
     window-ms: 60000
     fail-open: true
     key-type: API_KEY

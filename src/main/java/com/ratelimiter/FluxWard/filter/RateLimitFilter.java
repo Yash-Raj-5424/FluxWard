@@ -37,9 +37,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String clientKey = clientKeyExtractor.extract(request);
         RateLimitResult result = rateLimiterService.check(clientKey);
 
-        response.setHeader("X-RateLimit-Limit",     String.valueOf(result.getLimit()));
+        response.setHeader("X-RateLimit-Limit", String.valueOf(result.getLimit()));
         response.setHeader("X-RateLimit-Remaining", String.valueOf(result.getRemaining()));
-        response.setHeader("X-RateLimit-Reset",     String.valueOf(result.getResetAt().getEpochSecond()));
+        response.setHeader("X-RateLimit-Reset", String.valueOf(result.getResetAt().getEpochSecond()));
 
 
         if(!result.isAllowed()) {
