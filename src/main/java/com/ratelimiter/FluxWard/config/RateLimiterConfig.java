@@ -2,6 +2,7 @@ package com.ratelimiter.FluxWard.config;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.ratelimiter.FluxWard.core.algorithm.TokenBucketRateLimiter;
 import com.ratelimiter.FluxWard.model.RateLimitRule;
 import com.ratelimiter.FluxWard.model.enums.KeyType;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -13,6 +14,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 
 
 import java.time.Clock;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Configuration
@@ -27,7 +29,8 @@ public class RateLimiterConfig {
     @Bean
     public Cache<String, AtomicLong> fallBackCache() {
         return Caffeine.newBuilder()
-                .expireAfterWrite(1, java.util.concurrent.TimeUnit.MINUTES)
+                .expireAfterWrite(1, TimeUnit.MINUTES)
+                .maximumSize(10_000)
                 .build();
     }
 
@@ -37,13 +40,25 @@ public class RateLimiterConfig {
                 properties.getCapacity(),
                 properties.getRefillRatePerSecond(),
                 properties.getWindowMs(),
-                KeyType.valueOf(properties.getKeyType())
+                RateLimitRule.KeyType.valueOf(properties.getKeyType()),
+                properties.getAlgorithm()
         );
     }
 
     @Bean
     public Clock clock() {
         return Clock.systemUTC();
+    }
+
+    @Bean
+    public AlgorithmFactory algorithmFactory(TokenBucketRateLimiter tokenBucket, FixedWindowRateLimiter fixedWindow,
+                                             SlidingWindowRateLimiter slidingWindow) {
+        return new AlgorithmFactory(tokenBucket, fixedWindow, slidingWindow);
+    }
+
+    @Bean
+    public RouteRuleResolver routeRuleResolver(RateLimiterProperties properties, RateLimitRule defaultRule) {
+        return new RouteRuleResolver(properties, defaultRule);
     }
 
 }
