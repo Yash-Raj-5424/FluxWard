@@ -23,7 +23,7 @@ public class RateLimiterProperties {
     @NotNull private Long windowMs = 60_000L;
     @NotNull private Boolean failOpen = true;
     @NotNull private String keyType = "API_KEY";
-
+    private Algorithm algorithm = Algorithm.TOKEN_BUCKET;
     private List<RouteRuleProperties> routes = new ArrayList<>();
 
     @Getter

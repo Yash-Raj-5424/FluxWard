@@ -2,6 +2,10 @@ package com.ratelimiter.FluxWard.config;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.ratelimiter.FluxWard.core.AlgorithmFactory;
+import com.ratelimiter.FluxWard.core.RouteRuleResolver;
+import com.ratelimiter.FluxWard.core.algorithm.FixedWindowRateLimiter;
+import com.ratelimiter.FluxWard.core.algorithm.SlidingWindowRateLimiter;
 import com.ratelimiter.FluxWard.core.algorithm.TokenBucketRateLimiter;
 import com.ratelimiter.FluxWard.model.RateLimitRule;
 import com.ratelimiter.FluxWard.model.enums.KeyType;
