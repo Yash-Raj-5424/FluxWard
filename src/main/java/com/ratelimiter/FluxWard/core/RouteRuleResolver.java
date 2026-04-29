@@ -19,6 +19,7 @@ public class RouteRuleResolver {
         if(routes == null || routes.isEmpty())  return defaultRule;
 
         for(RateLimiterProperties.RouteRuleProperties route: routes){
+            System.out.println("Matching: " + route.getPath() + " against: " + reqPath);
             if(pathMatcher.match(route.getPath(), reqPath)){
                 return new RateLimitRule(
                         route.getCapacity() != null ? route.getCapacity() : defaultRule.getCapacity(),

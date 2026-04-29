@@ -7,3 +7,4 @@ public interface RateLimiter {
 
     RateLimitResult tryAcquire(String clientKey, RateLimitRule rule);
 }
+
