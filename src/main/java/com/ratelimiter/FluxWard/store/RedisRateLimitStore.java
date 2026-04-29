@@ -1,7 +1,12 @@
 package com.ratelimiter.FluxWard.store;
 
+import com.ratelimiter.FluxWard.config.Algorithm;
 import com.ratelimiter.FluxWard.model.RateLimitResult;
 import com.ratelimiter.FluxWard.model.RateLimitRule;
+import com.ratelimiter.FluxWard.store.script.FixedWindowScript;
+import com.ratelimiter.FluxWard.store.script.SlidingWindowScript;
+import com.ratelimiter.FluxWard.store.script.TokenBucketScript;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -12,63 +17,83 @@ import java.util.List;
 
 @Component
 @Primary
+@RequiredArgsConstructor
 public class RedisRateLimitStore implements RateLimitStore{
 
     private final StringRedisTemplate redis;
+    private final TokenBucketScript tokenBucketScript;
+    private final FixedWindowScript fixedWindowScript;
+    private final SlidingWindowScript slidingWindowScript;
 
-    private static final String TOKEN_BUCKET_SCRIPT = """
-            local key = KEYS[1]
-        local capacity = tonumber(ARGV[1])
-        local refillRate = tonumber(ARGV[2])
-        local now = tonumber(ARGV[3])
-
-        local bucket = redis.call('HMGET', key, 'tokens', 'last_refill')
-        local tokens = tonumber(bucket[1]) or capacity
-        local lastRefill = tonumber(bucket[2]) or now
-
-        local elapsed = now - lastRefill
-        local refillTokens = math.floor(elapsed * refillRate / 1000)
-        tokens = math.min(tokens + refillTokens, capacity)
-        lastRefill = now
-
-        if tokens > 0 then
-            tokens = tokens - 1
-            redis.call('HMSET', key, 'tokens', tokens, 'last_refill', lastRefill)
-            return {1, tokens} -- Allowed, return remaining tokens
-        else
-            redis.call('HMSET', key, 'tokens', tokens, 'last_refill', lastRefill)
-            return {0, 0} -- Not allowed, no tokens left
-        end
-    """;
-
-    public RedisRateLimitStore(StringRedisTemplate redis) {
-        this.redis = redis;
-    }
-
-
-    private static final DefaultRedisScript<List> SCRIPT = new DefaultRedisScript<>(TOKEN_BUCKET_SCRIPT,
-                                                                                    List.class);
-
+    @Override
+    @SuppressWarnings("unchecked")
     public RateLimitResult getAndIncrement(String clientKey, RateLimitRule rule, Instant now) {
 
-        List<Object> result = redis.execute(
-                SCRIPT,
-                List.of("rl:" + clientKey),
-                String.valueOf(rule.getCapacity()),
-                String.valueOf(rule.getRefillRatePerSecond()),
-                String.valueOf(now.toEpochMilli())
-        );
-        if(result == null || result.isEmpty()) {
-            return RateLimitResult.allowed(rule.getCapacity(), rule.getCapacity(), now.plusSeconds(60));
-        }
+        long nowMs = now.toEpochMilli();
+        List<Long> result;
+        Instant resetAt;
 
-        boolean allowed = ((Long) result.get(0)) == 1L;
-        long remaining  = (Long) result.get(1);
-        Instant resetAt = now.plusSeconds(1);
+        return switch (rule.getAlgorithm()) {
+            case FIXED_WINDOW -> {
+                result = (List<Long>) redis.execute(
+                        fixedWindowScript,
+                        List.of("rl:" + clientKey),
+                        String.valueOf(rule.getCapacity()),
+                        String.valueOf(rule.getWindowMs()),
+                        String.valueOf(nowMs)
+                );
+                if (result == null || result.isEmpty()) {
+                    yield RateLimitResult.allowed(rule.getCapacity(), rule.getCapacity(),
+                            now.plusMillis(rule.getWindowMs()));
+                }
+                long ttlMs = result.get(2);
+                resetAt = now.plusMillis(ttlMs > 0 ? ttlMs : rule.getWindowMs());
+                yield result.get(0) == 1L
+                        ? RateLimitResult.allowed(result.get(1), rule.getCapacity(), resetAt)
+                        : RateLimitResult.rejected(ttlMs, resetAt);
+            }
 
-        return allowed
-                ? RateLimitResult.allowed(remaining, rule.getCapacity(), resetAt)
-                : RateLimitResult.rejected(1000L, resetAt);
+            case SLIDING_WINDOW -> {
+                long bucket = nowMs / rule.getWindowMs();
+                String curKey = "rl:" + clientKey + ":sw:" + bucket;
+                String prevKey = "rl:" + clientKey + ":sw:" + (bucket - 1);
+                result = (List<Long>) redis.execute(
+                        slidingWindowScript,
+                        List.of(curKey, prevKey),
+                        String.valueOf(rule.getCapacity()),
+                        String.valueOf(rule.getWindowMs()),
+                        String.valueOf(nowMs)
+                );
+                if (result == null || result.isEmpty()) {
+                    yield RateLimitResult.allowed(rule.getCapacity(), rule.getCapacity(),
+                            now.plusMillis(rule.getWindowMs()));
+                }
+                long ttlMs = result.get(2);
+                resetAt = now.plusMillis(ttlMs > 0 ? ttlMs : rule.getWindowMs());
+                yield result.get(0) == 1L
+                        ? RateLimitResult.allowed(result.get(1), rule.getCapacity(), resetAt)
+                        : RateLimitResult.rejected(ttlMs, resetAt);
+            }
+
+            case TOKEN_BUCKET -> {
+                result = (List<Long>) redis.execute(
+                        tokenBucketScript,
+                        List.of("rl:" + clientKey),
+                        String.valueOf(rule.getCapacity()),
+                        String.valueOf(rule.getRefillRatePerSecond()),
+                        String.valueOf(now.getEpochSecond())
+                );
+                System.out.println("TOKEN BUCKET result: " + result);
+                if (result == null || result.isEmpty()) {
+                    yield RateLimitResult.allowed(rule.getCapacity(), rule.getCapacity(),
+                            now.plusSeconds(1));
+                }
+                resetAt = now.plusSeconds(1);
+                yield result.get(0) == 1L
+                        ? RateLimitResult.allowed(result.get(1), rule.getCapacity(), resetAt)
+                        : RateLimitResult.rejected(1000L, resetAt);
+            }
+        };
     }
 
     @Override

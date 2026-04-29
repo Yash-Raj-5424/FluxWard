@@ -12,7 +12,7 @@ public class TokenBucketScript extends DefaultRedisScript<List> {
 
     public TokenBucketScript(){
         setResultType(List.class);
-        setScriptSource(new ResourceScriptSource(new ClassPathResource("/lua/token_bucket.lua")));
+        setScriptSource(new ResourceScriptSource(new ClassPathResource("lua/token_bucket.lua")));
     }
 
 }
