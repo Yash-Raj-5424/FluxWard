@@ -14,7 +14,6 @@ import java.util.List;
 @Validated
 @Getter
 @Setter
-@Component
 public class RateLimiterProperties {
 
     @NotNull
@@ -25,6 +24,10 @@ public class RateLimiterProperties {
     @NotNull private String keyType = "API_KEY";
     private Algorithm algorithm = Algorithm.TOKEN_BUCKET;
     private List<RouteRuleProperties> routes = new ArrayList<>();
+
+    public boolean isFailOpen() {
+        return failOpen;
+    }
 
     @Getter
     @Setter
