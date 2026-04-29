@@ -12,6 +12,16 @@ spring:
     window-ms: 60000
     fail-open: true
     key-type: API_KEY
+    algorithm: TOKEN_BUCKET
+    routes:
+      - path: /test/fixedwindow
+        algorithm: FIXED_WINDOW
+        capacity: 10
+        window-ms: 60000
+      - path: /test/slidingwindow
+        algorithm: SLIDING_WINDOW
+        capacity: 30
+        window-ms: 10000
 
   management:
     endpoints:
