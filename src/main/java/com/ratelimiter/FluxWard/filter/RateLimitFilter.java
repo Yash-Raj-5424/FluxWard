@@ -35,7 +35,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             throws IOException, ServletException {
 
         String clientKey = clientKeyExtractor.extract(request);
-        RateLimitResult result = rateLimiterService.check(clientKey);
+        RateLimitResult result = rateLimiterService.check(clientKey, request.getRequestURI());
 
         response.setHeader("X-RateLimit-Limit", String.valueOf(result.getLimit()));
         response.setHeader("X-RateLimit-Remaining", String.valueOf(result.getRemaining()));

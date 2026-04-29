@@ -1,7 +1,9 @@
 package com.ratelimiter.FluxWard.service;
 
 import com.ratelimiter.FluxWard.config.RateLimiterProperties;
+import com.ratelimiter.FluxWard.core.AlgorithmFactory;
 import com.ratelimiter.FluxWard.core.RateLimiter;
+import com.ratelimiter.FluxWard.core.RouteRuleResolver;
 import com.ratelimiter.FluxWard.model.RateLimitResult;
 import com.ratelimiter.FluxWard.model.RateLimitRule;
 import com.ratelimiter.FluxWard.store.InMemoryFallBackStore;
@@ -16,22 +18,23 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class RateLimiterService {
 
-    private final RateLimiter rateLimiter;
     private final RedisRateLimitStore redisStore;
+    private final AlgorithmFactory algorithmFactory;
+    private final RouteRuleResolver routeResolver;
     private final InMemoryFallBackStore fallBackStore;
-    private final RateLimitRule defaultRule;
     private final RateLimiterProperties properties;
 
-    public RateLimitResult check(String clientKey){
-
+    public RateLimitResult check(String clientKey, String requestPath){
+        RateLimitRule rule = routeResolver.resolve(requestPath);
         boolean redisUp = redisStore.isAvailable();
 
-        RateLimitStore store = redisUp ? redisStore : fallBackStore;
-
-        if (!redisUp && !properties.getFailOpen()) {
+        if(redisUp) {
+            return algorithmFactory.get(rule.getAlgorithm())
+                    .tryAcquire(clientKey, rule);
+        }else if(properties.isFailOpen()){
+            return fallBackStore.getAndIncrement(clientKey, rule, Instant.now());
+        }else{
             return RateLimitResult.rejected(5_000L, Instant.now().plusSeconds(5));
         }
-
-        return store.getAndIncrement(clientKey, defaultRule, Instant.now());
     }
 }
