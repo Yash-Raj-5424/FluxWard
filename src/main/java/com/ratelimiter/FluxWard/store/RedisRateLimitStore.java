@@ -42,6 +42,7 @@ public class RedisRateLimitStore implements RateLimitStore{
                         String.valueOf(rule.getWindowMs()),
                         String.valueOf(nowMs)
                 );
+                System.out.println("FIXED WINDOW result: " + result);
                 if (result == null || result.isEmpty()) {
                     yield RateLimitResult.allowed(rule.getCapacity(), rule.getCapacity(),
                             now.plusMillis(rule.getWindowMs()));
@@ -64,6 +65,7 @@ public class RedisRateLimitStore implements RateLimitStore{
                         String.valueOf(rule.getWindowMs()),
                         String.valueOf(nowMs)
                 );
+                System.out.println("SLIDING WINDOW result: " + result);
                 if (result == null || result.isEmpty()) {
                     yield RateLimitResult.allowed(rule.getCapacity(), rule.getCapacity(),
                             now.plusMillis(rule.getWindowMs()));
@@ -100,10 +102,10 @@ public class RedisRateLimitStore implements RateLimitStore{
     public boolean isAvailable() {
         try {
             redis.opsForValue().get("health-check");
-            System.out.println("Redis is AVAILABLE");
+//            System.out.println("Redis is AVAILABLE");
             return true;
         } catch (Exception e) {
-            System.out.println("Redis is UNAVAILABLE: " + e.getMessage());
+//            System.out.println("Redis is UNAVAILABLE: " + e.getMessage());
             return false;
         }
     }

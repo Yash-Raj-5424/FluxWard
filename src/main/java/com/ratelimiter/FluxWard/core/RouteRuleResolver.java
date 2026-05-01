@@ -1,6 +1,7 @@
 package com.ratelimiter.FluxWard.core;
 
 import com.ratelimiter.FluxWard.config.RateLimiterProperties;
+import com.ratelimiter.FluxWard.config.RouteRuleProperties;
 import com.ratelimiter.FluxWard.model.RateLimitRule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.AntPathMatcher;
@@ -15,11 +16,10 @@ public class RouteRuleResolver {
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     public RateLimitRule resolve(String reqPath) {
-        List<RateLimiterProperties.RouteRuleProperties> routes = properties.getRoutes();
+        List<RouteRuleProperties> routes = properties.getRoutes();
         if(routes == null || routes.isEmpty())  return defaultRule;
 
-        for(RateLimiterProperties.RouteRuleProperties route: routes){
-            System.out.println("Matching: " + route.getPath() + " against: " + reqPath);
+        for(RouteRuleProperties route: routes){
             if(pathMatcher.match(route.getPath(), reqPath)){
                 return new RateLimitRule(
                         route.getCapacity() != null ? route.getCapacity() : defaultRule.getCapacity(),

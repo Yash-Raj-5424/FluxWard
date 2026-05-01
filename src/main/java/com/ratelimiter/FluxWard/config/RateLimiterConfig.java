@@ -62,6 +62,7 @@ public class RateLimiterConfig {
 
     @Bean
     public RouteRuleResolver routeRuleResolver(RateLimiterProperties properties, RateLimitRule defaultRule) {
+        System.out.println("Routes in config: " + properties.getRoutes().size());
         return new RouteRuleResolver(properties, defaultRule);
     }
 

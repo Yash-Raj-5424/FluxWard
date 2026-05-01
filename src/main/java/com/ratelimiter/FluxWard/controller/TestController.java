@@ -12,12 +12,12 @@ public class TestController {
     }
 
     @GetMapping("/test/fixedwindow")
-    public String testLogin(){
+    public String testFixedWindow(){
         return "fixed_window ok";
     }
 
     @GetMapping("/test/slidingwindow")
-    public String testSearch(){
+    public String testSlidingWindow(){
         return "sliding_window ok";
     }
 }

@@ -29,13 +29,5 @@ public class RateLimiterProperties {
         return failOpen;
     }
 
-    @Getter
-    @Setter
-    public static class RouteRuleProperties {
-        @NotNull private String path;
-        @NotNull private Algorithm algorithm;
-        @NotNull private Long capacity;
-        @NotNull private Long refillRatePerSecond;
-        @NotNull private Long windowMs;
-    }
+
 }
