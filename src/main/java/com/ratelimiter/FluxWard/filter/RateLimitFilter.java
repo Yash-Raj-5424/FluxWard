@@ -21,11 +21,9 @@ import java.io.IOException;
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final RateLimiterService rateLimiterService;
-    private final ClientKeyExtractor clientKeyExtractor;
 
-    public RateLimitFilter(RateLimiterService rateLimiterService, ClientKeyExtractor clientKeyExtractor) {
+    public RateLimitFilter(RateLimiterService rateLimiterService) {
         this.rateLimiterService = rateLimiterService;
-        this.clientKeyExtractor = clientKeyExtractor;
     }
 
     @Override
@@ -34,15 +32,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                  FilterChain filterChain)
             throws IOException, ServletException {
 
-        String clientKey = clientKeyExtractor.extract(request);
-        RateLimitResult result = rateLimiterService.check(clientKey, request.getRequestURI());
+        RateLimitResult result = rateLimiterService.check(request);
 
         response.setHeader("X-RateLimit-Limit", String.valueOf(result.getLimit()));
         response.setHeader("X-RateLimit-Remaining", String.valueOf(result.getRemaining()));
         response.setHeader("X-RateLimit-Reset", String.valueOf(result.getResetAt().getEpochSecond()));
 
-
-        if(!result.isAllowed()) {
+        if (!result.isAllowed()) {
             response.setHeader("Retry-After", String.valueOf(result.getRetryAfterMs() / 1000));
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);

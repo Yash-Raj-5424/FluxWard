@@ -34,14 +34,18 @@ rate-limiter:
   fail-open: true
   key-type: API_KEY
   algorithm: TOKEN_BUCKET
+  jwt:
+    secret: "my-secret-key-but-it-must-be-at-least-32-characters-long"
   routes:
     - path: /test/fixedwindow
       algorithm: FIXED_WINDOW
       capacity: 10
       refill-rate-per-second: 10
       window-ms: 60000
+      key-type: API_KEY
     - path: /test/slidingwindow
       algorithm: SLIDING_WINDOW
       capacity: 30
       refill-rate-per-second: 10
       window-ms: 10000
+      key-type: JWT_SUBJECT

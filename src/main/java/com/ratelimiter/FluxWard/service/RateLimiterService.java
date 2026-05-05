@@ -2,6 +2,7 @@ package com.ratelimiter.FluxWard.service;
 
 import com.ratelimiter.FluxWard.config.RateLimiterProperties;
 import com.ratelimiter.FluxWard.core.AlgorithmFactory;
+import com.ratelimiter.FluxWard.core.KeyExtractorResolver;
 import com.ratelimiter.FluxWard.core.RateLimiter;
 import com.ratelimiter.FluxWard.core.RouteRuleResolver;
 import com.ratelimiter.FluxWard.metrics.RateLimitMetrics;
@@ -12,6 +13,7 @@ import com.ratelimiter.FluxWard.store.InMemoryFallBackStore;
 import com.ratelimiter.FluxWard.store.RateLimitStore;
 import com.ratelimiter.FluxWard.store.RedisRateLimitStore;
 import io.micrometer.core.instrument.Timer;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,9 +28,12 @@ public class RateLimiterService {
     private final InMemoryFallBackStore fallBackStore;
     private final RateLimiterProperties properties;
     private final RateLimitMetrics metrics;
+    private final KeyExtractorResolver keyExtractorResolver;
 
-    public RateLimitResult check(String clientKey, String requestPath) {
-        RateLimitRule rule = routeResolver.resolve(requestPath);
+    public RateLimitResult check(HttpServletRequest request) {
+        String requestPath = request.getRequestURI();
+        RateLimitRule rule  = routeResolver.resolve(requestPath);
+        String clientKey    = keyExtractorResolver.extract(request, rule);
         RateLimitResult result;
 
         try {
@@ -36,14 +41,14 @@ public class RateLimiterService {
             result = timer.record(() ->
                     circuitBreakerRedisStore.execute(clientKey, rule, Instant.now())
             );
-            if (result == null)     result = fallback(clientKey, rule);
+            if (result == null)    result = fallback(clientKey, rule);
 
         } catch (Exception e) {
             result = fallback(clientKey, rule);
         }
 
         if (result.isAllowed())     metrics.recordAllowed(clientKey, rule, requestPath);
-        else   metrics.recordRejected(clientKey, rule, requestPath);
+        else metrics.recordRejected(clientKey, rule, requestPath);
 
         return result;
     }

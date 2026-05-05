@@ -22,11 +22,11 @@ public class RouteRuleResolver {
         for(RouteRuleProperties route: routes){
             if(pathMatcher.match(route.getPath(), reqPath)){
                 return new RateLimitRule(
-                        route.getCapacity() != null ? route.getCapacity() : defaultRule.getCapacity(),
-                        route.getRefillRatePerSecond()  != null ? route.getRefillRatePerSecond() : defaultRule.getRefillRatePerSecond(),
-                        route.getWindowMs() != null ? route.getWindowMs() : defaultRule.getWindowMs(),
-                        defaultRule.getKeyType(),
-                        route.getAlgorithm() != null ? route.getAlgorithm() : defaultRule.getAlgorithm()
+                        route.getCapacity()            != null ? route.getCapacity()            : defaultRule.getCapacity(),
+                        route.getRefillRatePerSecond() != null ? route.getRefillRatePerSecond() : defaultRule.getRefillRatePerSecond(),
+                        route.getWindowMs()            != null ? route.getWindowMs()            : defaultRule.getWindowMs(),
+                        route.getKeyType()             != null ? route.getKeyType()             : defaultRule.getKeyType(),
+                        route.getAlgorithm()           != null ? route.getAlgorithm()           : defaultRule.getAlgorithm()
                 );
             }
         }
