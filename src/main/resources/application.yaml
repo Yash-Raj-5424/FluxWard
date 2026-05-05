@@ -16,6 +16,17 @@ management:
       prometheus:
         enabled: true
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      redis:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-type: COUNT_BASED
+        register-health-indicator: true
+
 rate-limiter:
   capacity: 100
   refill-rate-per-second: 10
