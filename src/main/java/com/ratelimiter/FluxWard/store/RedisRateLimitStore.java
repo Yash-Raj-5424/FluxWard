@@ -85,7 +85,7 @@ public class RedisRateLimitStore implements RateLimitStore{
                         String.valueOf(rule.getRefillRatePerSecond()),
                         String.valueOf(now.getEpochSecond())
                 );
-                System.out.println("TOKEN BUCKET result: " + result);
+//                System.out.println("TOKEN BUCKET result: " + result);
                 if (result == null || result.isEmpty()) {
                     yield RateLimitResult.allowed(rule.getCapacity(), rule.getCapacity(),
                             now.plusSeconds(1));

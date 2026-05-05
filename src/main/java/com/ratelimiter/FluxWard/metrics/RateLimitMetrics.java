@@ -14,25 +14,24 @@ public class RateLimitMetrics {
     private final MeterRegistry meterRegistry;
 
     public void recordAllowed(String clientKey, RateLimitRule rule, String route){
-        Counter.builder("rate_limit_decisions")
-                .tag("result", "allowed")
-                .tag("algorithm", rule.getAlgorithm().name())
-                .tag("route", route)
-                .register(meterRegistry)
-                .increment();
+//        System.out.println("Recording ALLOWED metric for route: " + route);
+        meterRegistry.counter("rate_limit_decisions",
+                "result", "allowed",
+                "algorithm", rule.getAlgorithm().name(),
+                "route", route
+        ).increment();
     }
     public void recordRejected(String clientKey, RateLimitRule rule, String route) {
-        Counter.builder("rate_limit_decisions")
-                .tag("result", "rejected")
-                .tag("algorithm", rule.getAlgorithm().name())
-                .tag("route", route)
-                .register(meterRegistry)
-                .increment();
+        meterRegistry.counter("rate_limit_decisions",
+                "result", "rejected",
+                "algorithm", rule.getAlgorithm().name(),
+                "route", route
+        ).increment();
     }
 
     public Timer redisLatencyTimer(String algorithm) {
-        return Timer.builder("rate_limit_redis_latency")
-                .tag("algorithm", algorithm)
-                .register(meterRegistry);
+        return meterRegistry.timer("rate_limit_redis_latency",
+                "algorithm", algorithm
+        );
     }
 }
